@@ -1,3 +1,5 @@
+# Jack's Objective: Modify the script to include an option that allows it to read only the surface horizon data and ignore the volume data if prompted. I.e., if the user specifies where the volume data is, you can just use it. If the user doesn't specify it, ignore and utilize only the surface data. Utilizing an if-else statement, set an option for a default value of None and only include the horizons.
+
 #!/usr/bin/env python
 
 # Distributed under the MIT License.
@@ -23,11 +25,14 @@ def _parse_step(ctx, param, value):
 
 
 def ah_vis(ah_xmf: str, render_view: str):
-    """Helper function for visualizing the apparent horizons of the objects.
+    """
+    Helper function for visualizing the apparent horizons of the objects.
 
     Arguments:
     ah_xmf: Path to the xmf file of the object.
-    render_view: The current view in paraview to add the horizon to."""
+    render_view: The current view in paraview to add the horizon to.
+    """
+
     import paraview.simple as pv
 
     Ah_xmf = pv.XDMFReader(registrationName=ah_xmf, FileNames=[ah_xmf])
@@ -45,12 +50,36 @@ def ah_vis(ah_xmf: str, render_view: str):
     render_view.Update()
     pv.ColorBy(transform_1_display, None)
 
+    # Surface-only mode: no volume data supplied
+    if volume_xmf is None:
+        render_view = pv.GetActiveViewOrCreate("RenderView")
+        # overlay A/B horizons and then save directly
+        if aha_xmf:
+            ah_vis(aha_xmf, render_view)
+        if ahb_xmf:
+            ah_vis(ahb_xmf, render_view)
+        # set up camera exactly as in the full routine:
+        #  (copy‐paste the camera‐angle / zoom code from below)
+        …
+        # and finally write out a screenshot or animation:
+        if animate:
+            pv.SaveAnimation(output, render_view)
+        else:
+            pv.Render()
+            pv.SaveScreenshot(output, render_view)
+        return
+        """
+        This way:
+        When the user DOESN’T supply volume_xmf, you skip the entire slice/warp/color pipeline and just draw the two horizons.
+        When they do supply a volume_xmf, the original code (now inside the else:) will run exactly as before.
+        """
+
 
 def render_bbh(
-    volume_xmf: str,
+    volume_xmf: str = None, # now defaults to None
     output: str,
-    aha_xmf: str,
-    ahb_xmf: str,
+    aha_xmf: str = None, # now defaults to None
+    ahb_xmf: str = None, # now defaults to None
     time_step: int = 0,
     animate: bool = False,
     camera_angle: str = "Side",
@@ -59,7 +88,8 @@ def render_bbh(
     show_grid: bool = False,
     show_time: bool = False,
 ):
-    """Generate Pictures from XMF files for BBH Visualizations
+    """
+    Generate Pictures from XMF files for BBH Visualizations
 
     Generates pictures from BBH runs using the XMF files generated using
     generate-xdmf. This script requires that the Lapse and SpatialRicciScalar
@@ -79,7 +109,9 @@ def render_bbh(
       show_grid: Shows the grid lines of the domain.
       show_time: Shows the simulation time.
 
-    To splice all the pictures into a video, try using FFmpeg"""
+    To splice all the pictures into a video, try using FFmpeg
+    """
+    
     import paraview.simple as pv
 
     version = pv.GetParaViewVersion()
@@ -218,6 +250,8 @@ def render_bbh(
 @click.command(name="bbh", help=render_bbh.__doc__)
 @click.argument(
     "volume_xmf",
+    required=False, # no longer required
+    default=None, # default to None
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
 )
 @click.option(
