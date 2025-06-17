@@ -50,30 +50,6 @@ def ah_vis(ah_xmf: str, render_view: str):
     render_view.Update()
     pv.ColorBy(transform_1_display, None)
 
-    # Surface-only mode: no volume data supplied
-    if volume_xmf is None:
-        render_view = pv.GetActiveViewOrCreate("RenderView")
-        # overlay A/B horizons and then save directly
-        if aha_xmf:
-            ah_vis(aha_xmf, render_view)
-        if ahb_xmf:
-            ah_vis(ahb_xmf, render_view)
-        # set up camera exactly as in the full routine:
-        #  (copy‐paste the camera‐angle / zoom code from below)
-        …
-        # and finally write out a screenshot or animation:
-        if animate:
-            pv.SaveAnimation(output, render_view)
-        else:
-            pv.Render()
-            pv.SaveScreenshot(output, render_view)
-        return
-        """
-        This way:
-        When the user DOESN’T supply volume_xmf, you skip the entire slice/warp/color pipeline and just draw the two horizons.
-        When they do supply a volume_xmf, the original code (now inside the else:) will run exactly as before.
-        """
-
 
 def render_bbh(
     volume_xmf: str = None, # now defaults to None
@@ -113,6 +89,69 @@ def render_bbh(
     """
     
     import paraview.simple as pv
+
+    # Surface-only mode: no volume data supplied
+    if volume_xmf is None:
+        render_view = pv.GetActiveViewOrCreate("RenderView")
+        # overlay A/B horizons and then save directly
+        if aha_xmf:
+            ah_vis(aha_xmf, render_view)
+        if ahb_xmf:
+            ah_vis(ahb_xmf, render_view)
+        # set up camera exactly as in the full routine:
+            # Camera placements
+        # Top down view
+        if camera_angle == "Top":
+            render_view.CameraPosition = [0.0, 0.0, 36.90869716569761]
+            render_view.CameraFocalPoint = [0.0, 0.0, 0.6894899550131899]
+            render_view.CameraViewUp = [0, 1, 0]
+            render_view.CameraParallelScale = 424.27024700303446
+        # Wide/Inbetween View
+        elif camera_angle == "Wide":
+            render_view.CameraPosition = [
+                -89.0,
+                -17.0,
+                25.0,
+            ]
+            render_view.CameraFocalPoint = [
+                -0.3921962951264054,
+                1.6346750682876983,
+                -0.34522248814953405,
+            ]
+            render_view.CameraViewUp = [
+                0.0,
+                0.0,
+                1.0,
+            ]
+        # Side View
+        else:
+            render_view.CameraPosition = [
+                -29.944619336722987,
+                -3.666072157343372,
+                2.895224044348878,
+            ]
+            render_view.CameraFocalPoint = [
+                -0.13267040638072278,
+                0.6356115665206243,
+                -0.37352608789235847,
+            ]
+            render_view.CameraViewUp = [0.0, 0.0, 1.0]
+            render_view.CameraParallelScale = 519.6152422706632
+        camera = pv.GetActiveCamera()
+        pv.ResetCamera()
+        camera.Zoom(zoom_factor)
+        # and finally write out a screenshot or animation:
+        if animate:
+            pv.SaveAnimation(output, render_view)
+        else:
+            pv.Render()
+            pv.SaveScreenshot(output, render_view)
+        return
+        """
+        This way:
+        When the user DOESN’T supply volume_xmf, you skip the entire slice/warp/color pipeline and just draw the two horizons.
+        When they do supply a volume_xmf, the original code (now inside the else:) will run exactly as before.
+        """
 
     version = pv.GetParaViewVersion()
     if version < (5, 11) or version > (5, 11):
@@ -248,12 +287,13 @@ def render_bbh(
 
 
 @click.command(name="bbh", help=render_bbh.__doc__)
-@click.argument(
-    "volume_xmf",
-    required=False, # no longer required
-    default=None, # default to None
+@click.option(
+    "--volume-xmf", "-v",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
-)
+    required=False,
+    default=None,
+    help="Optional XMF file for the volume data. If omitted, only horizons are drawn.",
+) 
 @click.option(
     "--output",
     "-o",
