@@ -52,8 +52,8 @@ def ah_vis(ah_xmf: str, render_view: str):
 
 
 def render_bbh(
-    volume_xmf: str = None, # now defaults to None
     output: str,
+    volume_xmf: str = None, # now defaults to None
     aha_xmf: str = None, # now defaults to None
     ahb_xmf: str = None, # now defaults to None
     time_step: int = 0,
@@ -147,11 +147,8 @@ def render_bbh(
             pv.Render()
             pv.SaveScreenshot(output, render_view)
         return
-        """
-        This way:
-        When the user DOESN’T supply volume_xmf, you skip the entire slice/warp/color pipeline and just draw the two horizons.
-        When they do supply a volume_xmf, the original code (now inside the else:) will run exactly as before.
-        """
+        # This way: When the user does not supply volume_xmf, you skip the entire slice/warp/color pipeline and draw the two horizons. 
+        # When they do supply a volume_xmf, the original code (now inside the else:) will run exactly as before.
 
     version = pv.GetParaViewVersion()
     if version < (5, 11) or version > (5, 11):
