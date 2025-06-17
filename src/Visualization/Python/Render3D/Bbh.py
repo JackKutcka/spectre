@@ -44,8 +44,8 @@ def ah_vis(ah_xmf: str, render_view: str):
     )
     transform_1_display.SetScalarBarVisibility(render_view, False)
     # Sets apparent horizon color to black
-    transform_1_display.AmbientColor = [0.0, 0.0, 0.0]
-    transform_1_display.DiffuseColor = [0.0, 0.0, 0.0]
+    transform_1_display.AmbientColor = [1.0, 1.0, 1.0]
+    transform_1_display.DiffuseColor = [1.0, 1.0, 1.0]
 
     render_view.Update()
     pv.ColorBy(transform_1_display, None)
@@ -53,9 +53,9 @@ def ah_vis(ah_xmf: str, render_view: str):
 
 def render_bbh(
     output: str,
-    volume_xmf: str = None, # now defaults to None
-    aha_xmf: str = None, # now defaults to None
-    ahb_xmf: str = None, # now defaults to None
+    volume_xmf: str = None,  # now defaults to None
+    aha_xmf: str = None,  # now defaults to None
+    ahb_xmf: str = None,  # now defaults to None
     time_step: int = 0,
     animate: bool = False,
     camera_angle: str = "Side",
@@ -87,7 +87,7 @@ def render_bbh(
 
     To splice all the pictures into a video, try using FFmpeg
     """
-    
+
     import paraview.simple as pv
 
     # Surface-only mode: no volume data supplied
@@ -99,7 +99,7 @@ def render_bbh(
         if ahb_xmf:
             ah_vis(ahb_xmf, render_view)
         # set up camera exactly as in the full routine:
-            # Camera placements
+        # Camera placements
         # Top down view
         if camera_angle == "Top":
             render_view.CameraPosition = [0.0, 0.0, 36.90869716569761]
@@ -147,8 +147,8 @@ def render_bbh(
             pv.Render()
             pv.SaveScreenshot(output, render_view)
         return
-        # This way: When the user does not supply volume_xmf, you skip the entire slice/warp/color pipeline and draw the two horizons. 
-        # When they do supply a volume_xmf, the original code (now inside the else:) will run exactly as before.
+        # Skip the full pipeline and render only horizons if no volume_xmf.
+        # Otherwise run the normal slice/warp/color steps below.
 
     version = pv.GetParaViewVersion()
     if version < (5, 11) or version > (5, 11):
@@ -285,12 +285,16 @@ def render_bbh(
 
 @click.command(name="bbh", help=render_bbh.__doc__)
 @click.option(
-    "--volume-xmf", "-v",
+    "--volume-xmf",
+    "-v",
     type=click.Path(exists=True, file_okay=True, dir_okay=False, readable=True),
     required=False,
     default=None,
-    help="Optional XMF file for the volume data. If omitted, only horizons are drawn.",
-) 
+    help=(
+        "Optional XMF file for the volume data. If omitted, only horizons are"
+        " drawn."
+    ),
+)
 @click.option(
     "--output",
     "-o",
