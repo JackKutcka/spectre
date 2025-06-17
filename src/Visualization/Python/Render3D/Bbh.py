@@ -1,5 +1,11 @@
 # Jack's Objective: Modify the script to include an option that allows it to read only the surface horizon data and ignore the volume data if prompted. I.e., if the user specifies where the volume data is, you can just use it. If the user doesn't specify it, ignore and utilize only the surface data. Utilizing an if-else statement, set an option for a default value of None and only include the horizons.
 
+# New Objective: Smooth out horizon surface and
+
+# provide an option that allows the user to choose color based on the ricci scalar found inside the bbh file (solid white if not specified).
+
+# Make a movie that allows the bhs to come together and allow the individual horizons to disappear.
+
 #!/usr/bin/env python
 
 # Distributed under the MIT License.
