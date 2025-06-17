@@ -9,6 +9,7 @@ set(LIBRARY_SOURCES
   Test_CommunicationTags.cpp
   Test_EmitPackets.cpp
   Test_EvolvePackets.cpp
+  Test_FluidCouplingAction.cpp
   Test_ImplicitMonteCarloCorrections.cpp
   Test_InitializeAction.cpp
   Test_InterpolateOpacities.cpp
@@ -16,6 +17,7 @@ set(LIBRARY_SOURCES
   Test_NeutrinoInteractionTable.cpp
   Test_Packet.cpp
   Test_Scattering.cpp
+  Test_SwapGrTags.cpp
   Test_TakeTimeStep.cpp
   Test_TimeStepAction.cpp
   )
