@@ -1,10 +1,10 @@
 # Jack's Objective: Modify the script to include an option that allows it to read only the surface horizon data and ignore the volume data if prompted. I.e., if the user specifies where the volume data is, you can just use it. If the user doesn't specify it, ignore and utilize only the surface data. Utilizing an if-else statement, set an option for a default value of None and only include the horizons.
 
-# New Objective: Smooth out horizon surface and
+# New Objective: Smooth out horizon surfaces
 
-# provide an option that allows the user to choose color based on the ricci scalar found inside the bbh file (solid white if not specified).
+# Provide an option that allows the user to choose color based on the ricci scalar found inside the bbh file (solid white if not specified).
 
-# Make a movie that allows the bhs to come together and allow the individual horizons to disappear.
+# Make a movie that allows the BH's to come together and allow the individual horizons to disappear.
 
 #!/usr/bin/env python
 
@@ -47,6 +47,18 @@ def ah_vis(ah_xmf: str, render_view: str):
     transform_1.Transform.Translate = [0.0, 0.0, 2.0]
     transform_1_display = pv.Show(
         transform_1, render_view, "UnstructuredGridRepresentation"
+    )
+    # subdivide / smooth the mesh to remove blockiness
+    # run a smoothing filter directly on the horizon mesh
+    smooth = pv.Smooth(registrationName="SmoothHorizon", Input=transform_1)
+    smooth.NumberofIterations = 30  # more iterations = smoother
+    smooth.RelaxationFactor = 0.1  # smaller→tighter to original shape
+    smooth.FeatureEdgeSmoothing = True  # preserve sharp edges if you had any
+    smooth.BoundarySmoothing = True  # smooth the boundary loops too
+
+    # finally show the smoothed result instead of the raw transform_1
+    transform_1_display = pv.Show(
+        smooth, render_view, "UnstructuredGridRepresentation"
     )
     transform_1_display.SetScalarBarVisibility(render_view, False)
     # Sets apparent horizon color to black
