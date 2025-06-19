@@ -56,17 +56,20 @@ def ah_vis(ah_xmf: str, render_view: str):
     smooth.FeatureEdgeSmoothing = True  # preserve sharp edges if you had any
     smooth.BoundarySmoothing = True  # smooth the boundary loops too
 
-    # finally show the smoothed result instead of the raw transform_1
-    transform_1_display = pv.Show(
+    # show only the smoothed result
+    smoothed_display = pv.Show(
         smooth, render_view, "UnstructuredGridRepresentation"
     )
-    transform_1_display.SetScalarBarVisibility(render_view, False)
-    # Sets apparent horizon color to black
-    transform_1_display.AmbientColor = [1.0, 1.0, 1.0]
-    transform_1_display.DiffuseColor = [1.0, 1.0, 1.0]
+    smoothed_display.SetScalarBarVisibility(render_view, False)
+    # sets horizon color to white
+    smoothed_display.AmbientColor = [1, 1, 1]
+    smoothed_display.DiffuseColor = [1, 1, 1]
 
+    # hide the raw mesh
+    pv.Hide(transform_1)
+
+    pv.ColorBy(smoothed_display, None)
     render_view.Update()
-    pv.ColorBy(transform_1_display, None)
 
 
 def render_bbh(
