@@ -45,9 +45,9 @@ def ah_vis(ah_xmf: str, render_view: str):
     transform_1 = pv.Transform(registrationName="Transform1", Input=Ah_xmf)
     transform_1.Transform = "Transform"
     transform_1.Transform.Translate = [0.0, 0.0, 2.0]
-    transform_1_display = pv.Show(
-        transform_1, render_view, "UnstructuredGridRepresentation"
-    )
+    # transform_1_display = pv.Show(
+    #    transform_1, render_view, "UnstructuredGridRepresentation"
+    # )
     # subdivide / smooth the mesh to remove blockiness
     # run a smoothing filter directly on the horizon mesh
     smooth = pv.Smooth(registrationName="SmoothHorizon", Input=transform_1)
