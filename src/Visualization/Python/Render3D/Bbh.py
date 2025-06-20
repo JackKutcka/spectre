@@ -51,8 +51,8 @@ def ah_vis(ah_xmf: str, render_view: str):
     # subdivide / smooth the mesh to remove blockiness
     # run a smoothing filter directly on the horizon mesh
     smooth = pv.Smooth(registrationName="SmoothHorizon", Input=transform_1)
-    smooth.NumberofIterations = 190  # more iterations = smoother
-    smooth.RelaxationFactor = 0.7  # smaller→tighter to original shape
+    smooth.NumberofIterations = 200  # more iterations = smoother
+    smooth.RelaxationFactor = 0.9  # smaller→tighter to original shape
     smooth.FeatureEdgeSmoothing = True  # preserve sharp edges if you had any
     smooth.BoundarySmoothing = True  # smooth the boundary loops too
 
