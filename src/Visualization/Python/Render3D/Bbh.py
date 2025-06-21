@@ -67,12 +67,12 @@ def ah_vis(ah_xmf: str, render_view: str):
 
     # 2) Subdivide to up-res the mesh (2→16× faces)
     subdiv = pv.Subdivision(registrationName="SubdivideHorizon", Input=tri)
-    subdiv.NumberOfSubdivisions = 2
+    subdiv.NumberOfSubdivisions = 3 # 3 passes → 4³=64× faces
 
     # 3) Smooth the subdivided mesh
     smooth = pv.Smooth(registrationName="SmoothHorizon", Input=subdiv)
-    smooth.NumberofIterations = 5000  # increase for smoothness
-    smooth.RelaxationFactor = 0.2  # smaller→sticks closer
+    smooth.NumberofIterations = 2000  # increase for smoothness
+    smooth.RelaxationFactor = 0.05  # smaller→sticks closer
     smooth.FeatureEdgeSmoothing = True
     smooth.BoundarySmoothing = True
 
