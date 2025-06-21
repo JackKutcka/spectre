@@ -50,23 +50,49 @@ def ah_vis(ah_xmf: str, render_view: str):
     # )
     # subdivide / smooth the mesh to remove blockiness
     # run a smoothing filter directly on the horizon mesh
-    smooth = pv.Smooth(registrationName="SmoothHorizon", Input=transform_1)
-    smooth.NumberofIterations = 1000  # more iterations = smoother
-    smooth.RelaxationFactor = 0.9  # smaller→tighter to original shape
-    smooth.FeatureEdgeSmoothing = True  # preserve sharp edges if you had any
-    smooth.BoundarySmoothing = True  # smooth the boundary loops too
+    # smooth = pv.Smooth(registrationName="SmoothHorizon", Input=transform_1)
+    # smooth.NumberofIterations = 1000  # more iterations = smoother
+    # smooth.RelaxationFactor = 0.9  # smaller→tighter to original shape
+    # smooth.FeatureEdgeSmoothing = True  # preserve sharp edges if you had any
+    # smooth.BoundarySmoothing = True  # smooth the boundary loops too
 
     # show only the smoothed result
+    # smoothed_display = pv.Show(
+    #    smooth, render_view, "UnstructuredGridRepresentation"
+    # )
+    # 1) Triangulate to improve smoothing)
+    tri = pv.Triangulate(
+        registrationName="TriangulateHorizon", Input=transform_1
+    )
+
+    # 2) Subdivide to up-res the mesh (2→16× faces)
+    subdiv = pv.Subdivision(registrationName="SubdivideHorizon", Input=tri)
+    subdiv.NumberOfSubdivisions = 2
+
+    # 3) Smooth the subdivided mesh
+    smooth = pv.Smooth(registrationName="SmoothHorizon", Input=subdiv)
+    smooth.NumberofIterations = 5000  # increase for smoothness
+    smooth.RelaxationFactor = 0.2  # smaller→sticks closer
+    smooth.FeatureEdgeSmoothing = True
+    smooth.BoundarySmoothing = True
+
+    # 4) Display with smooth shading / interpolated normals
     smoothed_display = pv.Show(
         smooth, render_view, "UnstructuredGridRepresentation"
     )
+    smoothed_display.InterpolateScalarsBeforeMapping = True
+    smoothed_display.SetRepresentation("Surface")
+
     smoothed_display.SetScalarBarVisibility(render_view, False)
     # sets horizon color to white
     smoothed_display.AmbientColor = [1, 1, 1]
     smoothed_display.DiffuseColor = [1, 1, 1]
 
-    # hide the raw mesh
+    # 5) Hide the raw transform_1
+    # (and tri/subdiv) so only smoothed mesh is visible
     pv.Hide(transform_1)
+    pv.Hide(tri)
+    pv.Hide(subdiv)
 
     pv.ColorBy(smoothed_display, None)
     render_view.Update()
