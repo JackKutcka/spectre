@@ -66,7 +66,9 @@ def ah_vis(ah_xmf: str, render_view: str):
     )
 
     # 2) Subdivide to up-res the mesh (2→16× faces)
-    subdiv = pv.Subdivision(registrationName="SubdivideHorizon", Input=tri)
+    subdiv = pv.LoopSubdivision(
+        registrationName="SubdivideHorizon", Input=tri
+    )
     subdiv.NumberOfSubdivisions = 3  # 3 passes → 4³=64× faces
 
     # 3) Smooth the subdivided mesh
@@ -98,6 +100,7 @@ def ah_vis(ah_xmf: str, render_view: str):
     render_view.Update()
 
     print("▶ smoothing horizon:", ah_xmf)
+
 
 def render_bbh(
     output: str,
