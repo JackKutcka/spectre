@@ -72,7 +72,7 @@ def ah_vis(ah_xmf: str, render_view: str):
     # 3) Smooth the subdivided mesh
     smooth = pv.Smooth(registrationName="SmoothHorizon", Input=subdiv)
     smooth.NumberofIterations = 2000  # increase for smoothness
-    smooth.RelaxationFactor = 0.05  # smaller→sticks closer
+    smooth.Relaxationfactor = 0.05  # smaller→sticks closer
     smooth.FeatureEdgeSmoothing = True
     smooth.BoundarySmoothing = True
 
