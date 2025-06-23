@@ -29,10 +29,6 @@ def _parse_step(ctx, param, value):
         return -1
     return int(value)
 
-
-print("▶ smoothing horizon:", ah_xmf)
-
-
 def ah_vis(ah_xmf: str, render_view: str):
     """
     Helper function for visualizing the apparent horizons of the objects.
@@ -100,6 +96,7 @@ def ah_vis(ah_xmf: str, render_view: str):
     pv.ColorBy(smoothed_display, None)
     render_view.Update()
 
+print("▶ smoothing horizon:", ah_xmf)
 
 def render_bbh(
     output: str,
