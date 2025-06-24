@@ -61,6 +61,7 @@ def ah_vis(ah_xmf: str, render_view: str):
     #    smooth, render_view, "UnstructuredGridRepresentation"
     # )
     # 1) Triangulate to improve smoothing)
+
     tri = pv.Triangulate(
         registrationName="TriangulateHorizon", Input=transform_1
     )
