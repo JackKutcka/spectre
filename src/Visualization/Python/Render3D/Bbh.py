@@ -81,7 +81,7 @@ def ah_vis(ah_xmf: str, render_view: str):
         [p for p in dir(smooth) if not p.startswith("_")]
     )
     smooth.NumberofIterations = 2000  # increase for smoothness
-    smooth.Relaxationfactor = 0.05  # smaller→sticks closer
+    smooth.Convergence = 0.05  # smaller→sticks closer
     smooth.FeatureEdgeSmoothing = True
     smooth.BoundarySmoothing = True
 
