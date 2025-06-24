@@ -72,7 +72,7 @@ def ah_vis(ah_xmf: str, render_view: str):
         "  ▶ LoopSubdivision props:",
         [p for p in dir(subdiv) if not p.startswith("_")],
     )
-    subdiv.NumberofSubdivisions = 3  # 3 passes → 4³=64× faces
+    subdiv.NumberofSubdivisions = 1  # 1 passes → 4^1=4× faces
 
     # 3) Smooth the subdivided mesh
     smooth = pv.Smooth(registrationName="SmoothHorizon", Input=subdiv)
