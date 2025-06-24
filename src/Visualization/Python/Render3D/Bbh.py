@@ -77,13 +77,12 @@ def ah_vis(ah_xmf: str, render_view: str):
     # 3) Smooth the subdivided mesh
     smooth = pv.Smooth(registrationName="SmoothHorizon", Input=subdiv)
     print(
-        "  ▶ Smooth props:",
-        [p for p in dir(smooth) if not p.startswith("_")]
+        "  ▶ Smooth props:", [p for p in dir(smooth) if not p.startswith("_")]
     )
     smooth.NumberofIterations = 2000  # increase for smoothness
     smooth.Convergence = 0.05  # smaller→sticks closer
-    smooth.FeatureEdgeSmoothing = True
-    smooth.BoundarySmoothing = True
+    # smooth.FeatureEdgeSmoothing = True
+    # smooth.BoundarySmoothing = True
 
     # 4) Display with smooth shading / interpolated normals
     smoothed_display = pv.Show(
