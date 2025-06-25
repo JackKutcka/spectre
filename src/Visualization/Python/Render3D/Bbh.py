@@ -11,6 +11,16 @@
 # Distributed under the MIT License.
 # See LICENSE.txt for details.
 
+import faulthandler
+
+# force prints to show up immediately and dump C stacks on hard crashes
+import os
+import sys
+
+faulthandler.enable()
+sys.stdout.reconfigure(line_buffering=True)
+os.environ["PARAVIEW_DEBUG"] = "1"
+
 import logging
 import os
 
@@ -29,8 +39,7 @@ def _parse_step(ctx, param, value):
         return -1
     return int(value)
 
-
-def ah_vis(ah_xmf: str, render_view: str):
+    # def ah_vis(ah_xmf: str, render_view):
     """
     Helper function for visualizing the apparent horizons of the objects.
 
@@ -39,29 +48,15 @@ def ah_vis(ah_xmf: str, render_view: str):
     render_view: The current view in paraview to add the horizon to.
     """
 
-    import paraview.simple as pv
-
+    # import paraview.simple as pv
+    """
     Ah_xmf = pv.XDMFReader(registrationName=ah_xmf, FileNames=[ah_xmf])
     transform_1 = pv.Transform(registrationName="Transform1", Input=Ah_xmf)
     transform_1.Transform = "Transform"
     transform_1.Transform.Translate = [0.0, 0.0, 2.0]
-    # transform_1_display = pv.Show(
-    #    transform_1, render_view, "UnstructuredGridRepresentation"
-    # )
-    # subdivide / smooth the mesh to remove blockiness
-    # run a smoothing filter directly on the horizon mesh
-    # smooth = pv.Smooth(registrationName="SmoothHorizon", Input=transform_1)
-    # smooth.NumberofIterations = 1000  # more iterations = smoother
-    # smooth.RelaxationFactor = 0.9  # smaller→tighter to original shape
-    # smooth.FeatureEdgeSmoothing = True  # preserve sharp edges if you had any
-    # smooth.BoundarySmoothing = True  # smooth the boundary loops too
+    pv.Show(transform_1, render_view)
 
-    # show only the smoothed result
-    # smoothed_display = pv.Show(
-    #    smooth, render_view, "UnstructuredGridRepresentation"
-    # )
     # 1) Triangulate to improve smoothing)
-
     tri = pv.Triangulate(
         registrationName="TriangulateHorizon", Input=transform_1
     )
@@ -76,12 +71,12 @@ def ah_vis(ah_xmf: str, render_view: str):
     subdiv.NumberofSubdivisions = 1  # 1 passes → 4^1=4× faces
 
     # 3) Smooth the subdivided mesh
-    smooth = pv.Smooth(registrationName="SmoothHorizon", Input=subdiv)
+    smooth = pv.Smooth(registrationName="SmoothHorizon", Input=tri)
     print(
         "  ▶ Smooth props:", [p for p in dir(smooth) if not p.startswith("_")]
     )
-    smooth.NumberofIterations = 2000  # increase for smoothness
-    smooth.Convergence = 0.05  # smaller→sticks closer
+    smooth.NumberofIterations = 100  # increase for smoothness
+    smooth.Convergence = 0.1  # smaller→sticks closer
     # smooth.FeatureEdgeSmoothing = True
     # smooth.BoundarySmoothing = True
 
@@ -103,10 +98,51 @@ def ah_vis(ah_xmf: str, render_view: str):
     pv.Hide(tri)
     pv.Hide(subdiv)
 
-    pv.ColorBy(smoothed_display, None)
+    # pv.ColorBy(transform_1_display, None)
     render_view.Update()
+    """
 
-    print("▶ smoothing horizon:", ah_xmf)
+
+def ah_vis(ah_xmf, render_view):
+    import sys
+
+    import paraview.simple as pv
+
+    print("1) XDMFReader…")
+    sys.stdout.flush()
+    reader = pv.XDMFReader(registrationName="Reader", FileNames=[ah_xmf])
+    reader.UpdatePipeline()
+
+    print("2) Transform…")
+    sys.stdout.flush()
+    trans = pv.Transform(registrationName="Transform", Input=reader)
+    trans.Transform = "Transform"
+    trans.Transform.Translate = [0, 0, 2]
+    reader.UpdatePipeline()
+
+    print("3) Triangulate…")
+    sys.stdout.flush()
+    tri = pv.Triangulate(registrationName="Tri", Input=trans)
+    reader.UpdatePipeline()
+
+    # show just the raw triangulated mesh to confirm so far so good
+    print("4) Show(tri)…")
+    sys.stdout.flush()
+    disp_tri = pv.Show(tri, render_view, "UnstructuredGridRepresentation")
+    pv.Render()
+
+    # *** now test your smoother in isolation ***
+    print("5) Smooth…")
+    sys.stdout.flush()
+    smooth = pv.Smooth(registrationName="SmoothTest", Input=tri)
+    pv.UpdatePipeline(smooth)
+
+    print("6) after smooth!")
+    sys.stdout.flush()
+    disp_smooth = pv.Show(smooth, render_view, "UnstructuredGridRepresentation")
+    disp_smooth.SetRepresentation("Surface")
+    pv.ColorBy(disp_smooth, None)
+    pv.Render()
 
 
 def render_bbh(
