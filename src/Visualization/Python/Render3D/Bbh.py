@@ -39,111 +39,50 @@ def _parse_step(ctx, param, value):
         return -1
     return int(value)
 
-    # def ah_vis(ah_xmf: str, render_view):
-    """
-    Helper function for visualizing the apparent horizons of the objects.
-
-    Arguments:
-    ah_xmf: Path to the xmf file of the object.
-    render_view: The current view in paraview to add the horizon to.
-    """
-
-    # import paraview.simple as pv
-    """
-    Ah_xmf = pv.XDMFReader(registrationName=ah_xmf, FileNames=[ah_xmf])
-    transform_1 = pv.Transform(registrationName="Transform1", Input=Ah_xmf)
-    transform_1.Transform = "Transform"
-    transform_1.Transform.Translate = [0.0, 0.0, 2.0]
-    pv.Show(transform_1, render_view)
-
-    # 1) Triangulate to improve smoothing)
-    tri = pv.Triangulate(
-        registrationName="TriangulateHorizon", Input=transform_1
-    )
-
-    # 2) Subdivide to up-res the mesh (2→16× faces)
-    subdiv = pv.LoopSubdivision(registrationName="SubdivideHorizon", Input=tri)
-    # debug print
-    print(
-        "  ▶ LoopSubdivision props:",
-        [p for p in dir(subdiv) if not p.startswith("_")],
-    )
-    subdiv.NumberofSubdivisions = 1  # 1 passes → 4^1=4× faces
-
-    # 3) Smooth the subdivided mesh
-    smooth = pv.Smooth(registrationName="SmoothHorizon", Input=tri)
-    print(
-        "  ▶ Smooth props:", [p for p in dir(smooth) if not p.startswith("_")]
-    )
-    smooth.NumberofIterations = 100  # increase for smoothness
-    smooth.Convergence = 0.1  # smaller→sticks closer
-    # smooth.FeatureEdgeSmoothing = True
-    # smooth.BoundarySmoothing = True
-
-    # 4) Display with smooth shading / interpolated normals
-    smoothed_display = pv.Show(
-        smooth, render_view, "UnstructuredGridRepresentation"
-    )
-    smoothed_display.InterpolateScalarsBeforeMapping = True
-    smoothed_display.SetRepresentation("Surface")
-
-    smoothed_display.SetScalarBarVisibility(render_view, False)
-    # sets horizon color to white
-    smoothed_display.AmbientColor = [1, 1, 1]
-    smoothed_display.DiffuseColor = [1, 1, 1]
-
-    # 5) Hide the raw transform_1
-    # (and tri/subdiv) so only smoothed mesh is visible
-    pv.Hide(transform_1)
-    pv.Hide(tri)
-    pv.Hide(subdiv)
-
-    # pv.ColorBy(transform_1_display, None)
-    render_view.Update()
-    """
-
-
 def ah_vis(ah_xmf, render_view):
-    import sys
-
     import paraview.simple as pv
 
-    print("1) XDMFReader…")
-    sys.stdout.flush()
+    # 1) Read & translate
     reader = pv.XDMFReader(registrationName="Reader", FileNames=[ah_xmf])
-    reader.UpdatePipeline()
+    pv.UpdatePipeline(proxy=reader)
 
-    print("2) Transform…")
-    sys.stdout.flush()
     trans = pv.Transform(registrationName="Transform", Input=reader)
-    trans.Transform = "Transform"
-    trans.Transform.Translate = [0, 0, 2]
-    reader.UpdatePipeline()
+    trans.Transform.Translate = [0.0, 0.0, 2.0]
+    pv.UpdatePipeline(proxy=trans)
 
-    print("3) Triangulate…")
-    sys.stdout.flush()
-    tri = pv.Triangulate(registrationName="Tri", Input=trans)
-    reader.UpdatePipeline()
+    # 2) Extract a pure surface (vtkPolyData)
+    ext = pv.ExtractSurface(registrationName="ExtractSurface", Input=trans)
+    pv.UpdatePipeline(proxy=ext)
 
-    # show just the raw triangulated mesh to confirm so far so good
-    print("4) Show(tri)…")
-    sys.stdout.flush()
-    disp_tri = pv.Show(tri, render_view, "UnstructuredGridRepresentation")
-    pv.Render()
+    # 3) Triangulate that surface
+    tri = pv.Triangulate(registrationName="Triangulate", Input=ext)
+    pv.UpdatePipeline(proxy=tri)
 
-    # *** now test your smoother in isolation ***
-    print("5) Smooth…")
-    sys.stdout.flush()
-    smooth = pv.Smooth(registrationName="SmoothTest", Input=tri)
-    pv.UpdatePipeline(smooth)
+    # 4) Subdivide to up-res
+    subdiv = pv.LoopSubdivision(registrationName="Subdivide", Input=tri)
+    subdiv.NumberofSubdivisions = 1  # 4× faces
+    pv.UpdatePipeline(proxy=subdiv)
 
-    print("6) after smooth!")
-    sys.stdout.flush()
-    disp_smooth = pv.Show(smooth, render_view, "UnstructuredGridRepresentation")
-    disp_smooth.SetRepresentation("Surface")
-    pv.ColorBy(disp_smooth, None)
-    pv.Render()
+    # 5) Smooth
+    smooth = pv.Smooth(registrationName="SmoothHorizon", Input=subdiv)
+    smooth.NumberofIterations = 200
+    smooth.Convergence       = 0.01
+    pv.UpdatePipeline(proxy=smooth)
 
+    # 6) Show only the final smooth mesh
+    rep = pv.Show(smooth, render_view, "UnstructuredGridRepresentation")
+    rep.InterpolateScalarsBeforeMapping = True
+    rep.Representation = "Surface"
+    rep.AmbientColor = [1, 1, 1]
+    rep.DiffuseColor = [1, 1, 1]
+    pv.ColorBy(rep, None)
+
+    # 7) Hide everything upstream
+    for src in (reader, trans, ext, tri, subdiv):
+        pv.Hide(src)
+
+    render_view.Update()
+    print("▶ smoothed horizon:", ah_xmf)
 
 def render_bbh(
     output: str,
