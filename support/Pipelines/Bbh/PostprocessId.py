@@ -10,12 +10,17 @@ import click
 import yaml
 
 from spectre.Pipelines.Bbh.ControlId import (
+    DEFAULT_CONTROL_DELAY,
     DEFAULT_MAX_ITERATIONS,
     DEFAULT_RESIDUAL_TOLERANCE,
     TargetParams,
     control_id,
 )
-from spectre.Pipelines.Bbh.FindHorizon import find_horizon, vec_to_string
+from spectre.Pipelines.Bbh.FindHorizon import (
+    find_horizon,
+    use_excision_as_horizon,
+    vec_to_string,
+)
 from spectre.SphericalHarmonics import Frame, Strahlkorper
 from spectre.support.Schedule import schedule, scheduler_options
 from spectre.Visualization.OpenVolfiles import open_volfiles
@@ -35,9 +40,11 @@ def postprocess_id(
     control_max_iterations: int = DEFAULT_MAX_ITERATIONS,
     control_refinement_level: int = 1,
     control_polynomial_order: int = 6,
+    control_delay: int = DEFAULT_CONTROL_DELAY,
     control_params: List[TargetParams] = [],
     evolve: bool = False,
     eccentricity_control: bool = False,
+    negative_expansion_bc: bool = True,
     pipeline_dir: Optional[Union[str, Path]] = None,
     **scheduler_kwargs,
 ):
@@ -76,6 +83,8 @@ def postprocess_id(
       control_max_iterations: Maximum of iterations allowed for control.
       control_refinement_level: h-refinement used for control.
       control_polynomial_order: p-refinement used for control.
+      control_delay: Numer of iterations before control of delayed parameters
+        starts. See ControlId.py for details.
       control_params: List of parameters to control. See ControlId.py
         for details.
       evolve: Evolve the initial data after postprocessing (default: False).
@@ -111,22 +120,35 @@ def postprocess_id(
     for object_label, xcoord, excision_radius in zip(
         ["AhA", "AhB"], [x_A, x_B], [excision_radius_A, excision_radius_B]
     ):
-        _, horizon_quantities = find_horizon(
-            id_volfiles,
-            subfile_name=id_subfile_name,
-            obs_id=obs_id,
-            obs_time=0.0,
-            initial_guess=Strahlkorper[Frame.Inertial](
+        if negative_expansion_bc:
+            _, horizon_quantities = find_horizon(
+                id_volfiles,
+                subfile_name=id_subfile_name,
+                obs_id=obs_id,
+                obs_time=0.0,
+                initial_guess=Strahlkorper[Frame.Inertial](
+                    l_max=horizon_l_max,
+                    radius=excision_radius * 1.5,
+                    center=[xcoord, y_offset, z_offset],
+                ),
+                output_surfaces_file=horizons_file,
+                output_coeffs_subfile=f"{object_label}/Coefficients",
+                output_coords_subfile=f"{object_label}/Coordinates",
+                output_reductions_file=horizons_file,
+                output_quantities_subfile=object_label,
+            )
+        else:
+            _, horizon_quantities = use_excision_as_horizon(
+                id_volfiles,
+                subfile_name=id_subfile_name,
+                obs_id=obs_id,
+                obs_time=0.0,
                 l_max=horizon_l_max,
-                radius=excision_radius * 1.5,
+                radius=excision_radius,
                 center=[xcoord, y_offset, z_offset],
-            ),
-            output_surfaces_file=horizons_file,
-            output_coeffs_subfile=f"{object_label}/Coefficients",
-            output_coords_subfile=f"{object_label}/Coordinates",
-            output_reductions_file=horizons_file,
-            output_quantities_subfile=object_label,
-        )
+                output_reductions_file=horizons_file,
+                output_quantities_subfile=object_label,
+            )
         logger.info(
             f"{object_label} has mass"
             f" {horizon_quantities['ChristodoulouMass']:g} and spin"
@@ -141,8 +163,10 @@ def postprocess_id(
             id_run_dir=id_run_dir,
             residual_tolerance=control_residual_tolerance,
             max_iterations=control_max_iterations,
+            control_delay=control_delay,
             refinement_level=control_refinement_level,
             polynomial_order=control_polynomial_order,
+            negative_expansion_bc=negative_expansion_bc,
         )
         id_run_dir = last_control_run_dir
         id_input_file_path = f"{last_control_run_dir}/InitialData.yaml"
