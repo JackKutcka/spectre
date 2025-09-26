@@ -22,3 +22,11 @@ spectre_add_python_bindings_test(
   "unit;visualization;python;paraview"
   None
   TIMEOUT 30)
+
+  # My Addition
+  spectre_add_python_bindings_test(
+  "Unit.Visualization.Python.Render3D.UnitTest"
+  UnitTest.py
+  "unit;visualization;python;paraview"
+  None
+  TIMEOUT 30)
